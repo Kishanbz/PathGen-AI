@@ -35,8 +35,7 @@ Unlike traditional one-size-fits-all platforms like Coursera or Udemy, this syst
 | Project Category | AI + Data Science + EdTech |
 | Project Type | College Final Year Submission |
 | Development Duration | 3 Months (12 Weeks) |
-| Team Size | 2–4 Developers |
-| Core Technologies | Python, React.js, PostgreSQL, MinIO, LangChain, Docker |
+| Core Technologies | Python, Next.js, PostgreSQL, MinIO, LangChain, Docker |
 | Primary Users | Students, Teachers, Admins |
 | Deployment | Cloud / Local Docker Environment |
 
@@ -86,7 +85,7 @@ Existing platforms provide content but **do not intelligently adapt** learning j
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| Frontend | React.js + Tailwind CSS | UI, dashboards, learning pages |
+| Frontend | Next.js + Tailwind CSS | UI, dashboards, learning pages |
 | Frontend Charts | Recharts / Chart.js | Performance graphs, progress visualization |
 | Backend API | Python FastAPI | Core REST API for all modules |
 | Task Queue | Celery + Redis | Background AI processing, report generation |
@@ -107,7 +106,7 @@ Existing platforms provide content but **do not intelligently adapt** learning j
 ```
 ┌─────────────────────────────────────────────────┐
 │              PRESENTATION LAYER                  │
-│         React.js Dashboard (Student /            │
+│         Next.js Dashboard (Student /            │
 │              Teacher / Admin)                    │
 └────────────────────┬────────────────────────────┘
                      │ HTTP / REST
@@ -558,7 +557,7 @@ python seed_data.py
 
 | Week | Tasks | Deliverable |
 |---|---|---|
-| Week 9 | React.js student dashboard — path UI, progress charts, topic pages | Student dashboard |
+| Week 9 | Next.js student dashboard — path UI, progress charts, topic pages | Student dashboard |
 | Week 10 | Teacher dashboard — student analytics, at-risk alerts, content management UI | Teacher dashboard |
 | Week 11 | PDF report generation, Celery scheduling, admin panel, system testing | Reports + Admin |
 | Week 12 | Bug fixes, optimization, Docker deployment, documentation, demo prep | Final submission ✅ |
@@ -669,6 +668,6 @@ This project is created for **educational purposes** as a College Final Year Pro
 
 **Built with ❤️ using AI + Data Science**
 
-`Python` • `React.js` • `PostgreSQL` • `MinIO` • `LangChain` • `Docker`
+`Python` • `Next.js` • `PostgreSQL` • `MinIO` • `LangChain` • `Docker`
 
 </div>
