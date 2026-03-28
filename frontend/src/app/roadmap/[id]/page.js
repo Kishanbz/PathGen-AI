@@ -2,28 +2,40 @@
 
 import { useEffect, useState } from 'react';
 import RoadmapCanvas from '@/components/roadmap/RoadmapCanvas';
-import { MOCK_ROADMAP } from '@/lib/mock-roadmap';
 import { Share2, BookmarkPlus, Map } from 'lucide-react';
 import { useRoadmapStore } from '@/stores/roadmapStore';
+import { useAuth } from '@clerk/nextjs';
+import api from '@/lib/api';
 
 export default function RoadmapPage({ params }) {
   const { roadmapData, progress, initRoadmap, clearRoadmap } = useRoadmapStore();
   const [loading, setLoading] = useState(true);
+  const { getToken } = useAuth();
 
-  // In real app, fetch from API by params.id
   useEffect(() => {
-    // Simulate API delay
-    setLoading(true);
-    const timer = setTimeout(() => {
-      initRoadmap(MOCK_ROADMAP);
-      setLoading(false);
-    }, 500);
+    async function fetchRoadmap() {
+      setLoading(true);
+      try {
+        const token = await getToken();
+        const response = await api.get(`/roadmaps/${params.id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        initRoadmap(response.data);
+      } catch (err) {
+        console.error('Failed to fetch roadmap:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (params.id) {
+      fetchRoadmap();
+    }
 
     return () => {
-      clearTimeout(timer);
       clearRoadmap();
     };
-  }, [params, initRoadmap, clearRoadmap]);
+  }, [params.id, initRoadmap, clearRoadmap]);
 
   if (loading || !roadmapData) {
     return (

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Sparkles, Map, User, LogIn } from 'lucide-react';
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
+import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
 
 export default function Navbar() {
   return (
@@ -35,7 +35,7 @@ export default function Navbar() {
           
           <div className="h-5 w-px bg-white/10 hidden sm:block mx-1" />
 
-          <SignedOut>
+          <Show when="signed-out">
             <SignInButton mode="modal">
               <button className="text-sm font-medium text-slate-300 hover:text-white transition-colors flex items-center gap-2">
                 <span className="hidden sm:inline">Log in</span>
@@ -48,9 +48,9 @@ export default function Navbar() {
                 Sign Up
               </button>
             </SignUpButton>
-          </SignedOut>
+          </Show>
 
-          <SignedIn>
+          <Show when="signed-in">
             <Link 
               href="/dashboard"
               className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
@@ -65,7 +65,7 @@ export default function Navbar() {
               }}
               afterSignOutUrl="/" 
             />
-          </SignedIn>
+          </Show>
         </div>
       </div>
     </nav>

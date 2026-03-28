@@ -7,15 +7,19 @@ def generate_roadmap_with_ai(topic: str) -> dict:
     """
     Calls OpenAI to generate a learning roadmap formatted for React Flow.
     """
-    # Requires OPENAI_API_KEY in .env
+    # Requires NVIDIA API credentials in .env
     api_key = os.getenv("OPENAI_API_KEY")
+    base_url = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
+    model_name = os.getenv("AI_MODEL_NAME", "moonshotai/kimi-k2-instruct-0905")
+    
     if not api_key or api_key == "sk-placeholder":
-        raise ValueError("Missing or invalid OPENAI_API_KEY")
+        raise ValueError("Missing or invalid AI API Key")
 
-    # Initialize the LLM
+    # Initialize the LLM (OpenAI-compatible)
     llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.2, # Low temp for structured adherence
+        model=model_name,
+        base_url=base_url,
+        temperature=0.7, # Low temp for structured adherence
         api_key=api_key
     )
 

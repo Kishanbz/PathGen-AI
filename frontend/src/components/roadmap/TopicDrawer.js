@@ -1,11 +1,13 @@
-import { X, Youtube, FileText, Book, MessageSquare, ExternalLink, CheckCircle, CircleDashed } from 'lucide-react';
+import { X, Play, FileText, Book, MessageSquare, ExternalLink, CheckCircle, CircleDashed } from 'lucide-react';
 import { useState } from 'react';
 import { useRoadmapStore } from '@/stores/roadmapStore';
+import { useAuth } from '@clerk/nextjs';
 import confetti from 'canvas-confetti';
 
 export default function TopicDrawer({ node, isOpen, onClose }) {
   const [activeTab, setActiveTab] = useState('resources');
   const { updateNodeStatus } = useRoadmapStore();
+  const { getToken } = useAuth();
 
   if (!isOpen || !node) return null;
 
@@ -13,7 +15,7 @@ export default function TopicDrawer({ node, isOpen, onClose }) {
   const resources = data.resources || {};
 
   const handleMarkAsDone = () => {
-    updateNodeStatus(node.id, 'done');
+    updateNodeStatus(node.id, 'done', getToken);
     confetti({
       particleCount: 100,
       spread: 70,
@@ -83,7 +85,7 @@ export default function TopicDrawer({ node, isOpen, onClose }) {
             {resources.youtube?.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <Youtube size={16} className="text-red-500" /> Watch
+                  <Play size={16} className="text-red-500" /> Watch
                 </h3>
                 <div className="space-y-3">
                   {resources.youtube.map((vid, idx) => (
@@ -157,7 +159,7 @@ export default function TopicDrawer({ node, isOpen, onClose }) {
       <div className="p-6 border-t border-white/10 bg-[#151536] flex gap-3">
         {data.status === 'done' ? (
           <button 
-            onClick={() => updateNodeStatus(node.id, 'pending')}
+            onClick={() => updateNodeStatus(node.id, 'pending', getToken)}
             className="flex-1 py-2.5 rounded-lg bg-emerald-900/30 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-900/50 font-medium text-sm transition-colors flex items-center justify-center gap-2"
           >
             <CheckCircle size={16} /> Mark as Pending
@@ -173,14 +175,14 @@ export default function TopicDrawer({ node, isOpen, onClose }) {
 
         {data.status === 'skip' ? (
           <button 
-            onClick={() => updateNodeStatus(node.id, 'pending')}
+            onClick={() => updateNodeStatus(node.id, 'pending', getToken)}
             className="flex-1 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
           >
             <CircleDashed size={16} /> Unskip
           </button>
         ) : (
           <button 
-            onClick={() => updateNodeStatus(node.id, 'skip')}
+            onClick={() => updateNodeStatus(node.id, 'skip', getToken)}
             className="flex-1 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-medium text-sm transition-colors"
           >
             Skip Topic

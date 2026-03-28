@@ -22,7 +22,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
-    # init_db()  # Uncomment when DB is ready
+    init_db()  # Database initialized on startup
     pass
 
 app.include_router(api_router, prefix="/api")
