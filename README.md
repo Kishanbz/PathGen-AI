@@ -12,7 +12,8 @@
 
 ## 📋 Table of Contents
 
-- [PathGen-AI 🚀 AI-Powered Personalized Learning Path System](#pathgen-ai--ai-powered personalized learning path system)
+- [PathGen-AI 🚀 AI-Powered Personalized Learning Path System]
+
   - [📋 Table of Contents](#-table-of-contents)
   - [🚀 Project Overview](#-project-overview)
   - [❗ Problem Statement](#-problem-statement)
@@ -99,8 +100,9 @@ Platforms like roadmap.sh provide excellent curated roadmaps, but only for **pre
 
 | Feature                  | Description                                                             |
 | ------------------------ | ----------------------------------------------------------------------- |
-| 🤖 AI Roadmap Generator  | Enter any topic → AI generates a structured learning roadmap            |
+| 🤖 AI Roadmap Generator  | Enter any topic → AI generates a structured learning roadmap with **latest web resources** |
 | 🗺️ Interactive Flowchart | Tree-style visual roadmap with clickable nodes, zoom, and pan           |
+| ⏳ Progress Loading    | Visual progress steps during roadmap generation                       |
 | 🎉 Gamified UX           | Confetti explosion celebrations when marking topics as 'Done'           |
 | 📦 Resource Discovery    | Each node has curated YouTube videos, articles, and documentation links |
 | ✅ Progress Tracking     | Mark topics as Done / Skip / Pending with a live progress bar           |
@@ -150,7 +152,7 @@ Platforms like roadmap.sh provide excellent curated roadmaps, but only for **pre
 | Icons            | Lucide React                           | Modern SVG icons                             |
 | Backend API      | Python FastAPI                         | Core REST API                                |
 | AI / LLM         | LangChain + OpenAI GPT                 | Roadmap generation, resource curation        |
-| Web Search       | SerpAPI / Tavily                       | Find YouTube links, articles, docs           |
+| Web Search       | Firecrawl / SerpAPI / Tavily           | Find latest YouTube links, articles, docs      |
 | Database         | PostgreSQL                             | Users, roadmaps, progress, resources         |
 | Caching          | Redis                                  | API response caching, rate limiting          |
 | Containerization | Docker + Docker Compose                | Service orchestration                        |
@@ -177,13 +179,13 @@ Platforms like roadmap.sh provide excellent curated roadmaps, but only for **pre
 ┌──────────────┐ ┌────────┐ ┌──────────────┐
 │  Business    │ │   AI   │ │   Resource   │
 │   Logic      │ │ Engine │ │  Discovery   │
-│ (CRUD, Auth) │ │LangChn │ │ (Web Search) │
-│              │ │ + GPT  │ │ SerpAPI etc  │
+│ (CRUD, Auth) │ │LangChn │ │ (Firecrawl)  │
+│              │ │ + GPT  │ │ (Live Web)   │
 └──────┬───────┘ └───┬────┘ └──────┬───────┘
        │              │             │
 ┌──────▼──────────────▼─────────────▼───────┐
 │              STORAGE LAYER                 │
-│    PostgreSQL (DB)  +  Redis (Cache)       │
+│    PostgreSQL/SQLite (DB) + Redis (Cache)  │
 └────────────────────────────────────────────┘
 ```
 
@@ -291,8 +293,9 @@ pathgen-ai/
 │   │   └── database.py                    # DB connection
 │   └── main.py                            # FastAPI entry point
 │
-├── ai_engine/                             # AI & Resource Discovery
+├── backend/ai/                            # AI & Resource Discovery
 │   ├── roadmap_generator.py               # LangChain roadmap generation
+│   ├── firecrawl_client.py                # Firecrawl web search integration
 │   ├── resource_finder.py                 # Web search for YouTube/articles
 │   └── topic_analyzer.py                  # Break topic into sub-topics
 │
@@ -328,10 +331,13 @@ CREATE TABLE users (
 CREATE TABLE roadmaps (
     id          SERIAL PRIMARY KEY,
     user_id     INTEGER REFERENCES users(id),
+    author_id   VARCHAR(255),                  -- Clerk user ID
     title       VARCHAR(200) NOT NULL,         -- e.g., "React.js Learning Path"
     topic       VARCHAR(200) NOT NULL,         -- original user input
     description TEXT,
-    is_public   BOOLEAN DEFAULT true,
+    is_public   BOOLEAN DEFAULT false,         -- SQLite: 0/1, PostgreSQL: false/true
+    is_published INTEGER DEFAULT 0,              -- 0=private, 1=public
+    visits      INTEGER DEFAULT 0,             -- View count
     metadata    JSONB,                         -- difficulty, estimated_time, etc.
     created_at  TIMESTAMP DEFAULT NOW(),
     updated_at  TIMESTAMP DEFAULT NOW()
@@ -411,7 +417,7 @@ CREATE TABLE chat_history (
 
 | Method | Endpoint                  | Description                                       |
 | ------ | ------------------------- | ------------------------------------------------- |
-| POST   | `/api/roadmap/generate`   | Enter topic → AI generates full roadmap           |
+| POST   | `/api/roadmaps/generate`   | Enter topic → AI generates full roadmap (with live resources) |
 | GET    | `/api/roadmap/{id}`       | Get a specific roadmap with all nodes & resources |
 | GET    | `/api/roadmaps/explore`   | List public/featured roadmaps                     |
 | GET    | `/api/roadmaps/search?q=` | Search roadmaps by topic                          |
@@ -502,6 +508,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=1440
 OPENAI_API_KEY=sk-your-openai-api-key-here
 
 # ─── Web Search (for resource discovery) ────
+FIRECRAWL_API_KEY=your-firecrawl-api-key-here
 SERP_API_KEY=your-serpapi-key-here
 
 # ─── Redis ──────────────────────────────────
@@ -654,7 +661,32 @@ python seed_data.py
 
 ---
 
-## 📖 Glossary
+## � Changelog
+
+### Recent Updates
+
+| Date | Change | Description |
+|------|--------|-------------|
+| Apr 2025 | 🔥 **Firecrawl Integration** | AI roadmap generation now uses **Firecrawl** to fetch latest web resources (articles, videos, docs) for each topic |
+| Apr 2025 | 🐛 **Explore Page Fix** | Fixed JSX rendering issue causing roadmaps not to display on Explore page |
+| Apr 2025 | ⏳ **Progress Loading** | Added visual progress steps during roadmap generation (timer removed, steps kept) |
+| Apr 2025 | 🔗 **Navbar Fix** | "Generate with AI" button now redirects to home page to ensure topic input |
+| Apr 2025 | 🗄️ **SQLite Boolean Fix** | Fixed `is_published` filter logic for SQLite compatibility (`!= 0` instead of `== 1`) |
+| Apr 2025 | 🔧 **Debug Scripts** | Added `check_db.py` and `fix_publish.py` for database debugging |
+
+### Firecrawl Setup
+
+To use the latest web resource feature:
+
+```powershell
+# Set environment variable
+$env:FIRECRAWL_API_KEY="your-firecrawl-api-key"
+
+# Or in .env file (backend/.env)
+FIRECRAWL_API_KEY=your-firecrawl-api-key
+```
+
+## �📖 Glossary
 
 | Term       | Definition                                                          |
 | ---------- | ------------------------------------------------------------------- |
