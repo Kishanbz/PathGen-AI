@@ -85,7 +85,17 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [activeFilter, setActiveFilter] = useState(null); // 'completed', 'mastered', 'active'
   const menuRef = useRef(null);
+
+  // Filter roadmaps based on active filter
+  const filteredRoadmaps = roadmaps.filter(rm => {
+    if (!activeFilter) return true;
+    if (activeFilter === 'completed') return rm.progress === 100;
+    if (activeFilter === 'active') return rm.progress < 100;
+    if (activeFilter === 'mastered') return rm.progress === 100; // Same as completed for now
+    return true;
+  });
 
   useEffect(() => {
     async function fetchData() {
@@ -98,11 +108,8 @@ export default function DashboardPage() {
         const token = await getToken();
         const headers = { Authorization: `Bearer ${token}` };
 
-        // Fetch BOTH in parallel instead of sequentially
-        const [rmResponse, statsResponse] = await Promise.all([
-          api.get('/user/roadmaps', { headers, timeout: 8000 }),
-          api.get('/user/stats', { headers, timeout: 8000 })
-        ]);
+        // Fetch roadmaps only - we'll calculate stats from the data
+        const rmResponse = await api.get('/user/roadmaps', { headers, timeout: 30000 });
 
         // Remove duplicates - keep only the most recent roadmap for each topic
         const allRoadmaps = rmResponse.data.roadmaps || [];
@@ -120,10 +127,25 @@ export default function DashboardPage() {
         }
 
         setRoadmaps(uniqueRoadmaps);
-        setStats(statsResponse.data);
+        
+        // Calculate real stats from the actual roadmaps data
+        const completedRoadmaps = uniqueRoadmaps.filter(rm => rm.progress === 100).length;
+        const activeRoadmaps = uniqueRoadmaps.filter(rm => rm.progress < 100).length;
+        // Topics mastered = sum of completed nodes across all roadmaps
+        const topicsMastered = uniqueRoadmaps.reduce((sum, rm) => sum + (rm.completedNodes || 0), 0);
+        
+        setStats({
+          roadmaps_completed: completedRoadmaps,
+          topics_mastered: topicsMastered,
+          active_roadmaps: activeRoadmaps
+        });
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
-        setError('Could not load dashboard data. Please refresh.');
+        if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+          setError('Request timed out. The server is taking too long to respond. Please try again.');
+        } else {
+          setError('Could not load dashboard data. Please refresh.');
+        }
         // Still show the page with empty data
         setRoadmaps([]);
       } finally {
@@ -279,13 +301,19 @@ export default function DashboardPage() {
         ) : (
           <>
             <motion.div
-              className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 flex items-center gap-4"
+              className={`bg-slate-800/50 border rounded-2xl p-6 flex items-center gap-4 cursor-pointer transition-all ${
+                activeFilter === 'completed'
+                  ? 'border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/30'
+                  : 'border-slate-700 hover:border-emerald-500/50'
+              }`}
               variants={statCardVariants}
               custom={0}
-              whileHover={{ y: -4, boxShadow: '0 10px 30px rgba(16,185,129,0.1)' }}
+              whileHover={{ y: -4, boxShadow: '0 10px 30px rgba(16,185,129,0.2)' }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActiveFilter(activeFilter === 'completed' ? null : 'completed')}
             >
               <motion.div
-                className="p-4 bg-emerald-500/10 text-emerald-400 rounded-xl"
+                className={`p-4 rounded-xl ${activeFilter === 'completed' ? 'bg-emerald-500 text-white' : 'bg-emerald-500/10 text-emerald-400'}`}
                 whileHover={{ scale: 1.1, rotate: 5 }}
               >
                 <Trophy size={28} />
@@ -303,13 +331,19 @@ export default function DashboardPage() {
               </div>
             </motion.div>
             <motion.div
-              className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 flex items-center gap-4"
+              className={`bg-slate-800/50 border rounded-2xl p-6 flex items-center gap-4 cursor-pointer transition-all ${
+                activeFilter === 'mastered'
+                  ? 'border-purple-500 bg-purple-500/10 ring-2 ring-purple-500/30'
+                  : 'border-slate-700 hover:border-purple-500/50'
+              }`}
               variants={statCardVariants}
               custom={1}
-              whileHover={{ y: -4, boxShadow: '0 10px 30px rgba(168,85,247,0.1)' }}
+              whileHover={{ y: -4, boxShadow: '0 10px 30px rgba(168,85,247,0.2)' }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActiveFilter(activeFilter === 'mastered' ? null : 'mastered')}
             >
               <motion.div
-                className="p-4 bg-purple-500/10 text-purple-400 rounded-xl"
+                className={`p-4 rounded-xl ${activeFilter === 'mastered' ? 'bg-purple-500 text-white' : 'bg-purple-500/10 text-purple-400'}`}
                 whileHover={{ scale: 1.1, rotate: 5 }}
               >
                 <Target size={28} />
@@ -327,13 +361,19 @@ export default function DashboardPage() {
               </div>
             </motion.div>
             <motion.div
-              className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 flex items-center gap-4"
+              className={`bg-slate-800/50 border rounded-2xl p-6 flex items-center gap-4 cursor-pointer transition-all ${
+                activeFilter === 'active'
+                  ? 'border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/30'
+                  : 'border-slate-700 hover:border-blue-500/50'
+              }`}
               variants={statCardVariants}
               custom={2}
-              whileHover={{ y: -4, boxShadow: '0 10px 30px rgba(59,130,246,0.1)' }}
+              whileHover={{ y: -4, boxShadow: '0 10px 30px rgba(59,130,246,0.2)' }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActiveFilter(activeFilter === 'active' ? null : 'active')}
             >
               <motion.div
-                className="p-4 bg-blue-500/10 text-blue-400 rounded-xl"
+                className={`p-4 rounded-xl ${activeFilter === 'active' ? 'bg-blue-500 text-white' : 'bg-blue-500/10 text-blue-400'}`}
                 whileHover={{ scale: 1.1, rotate: 5 }}
               >
                 <BookOpen size={28} />
@@ -355,12 +395,25 @@ export default function DashboardPage() {
       </div>
 
       {/* User's Roadmaps */}
-      <motion.h2
-        className="text-2xl font-bold text-white mb-6"
-        variants={fadeInUp}
-      >
-        Your Learning Paths
-      </motion.h2>
+      <motion.div className="flex items-center justify-between mb-6" variants={fadeInUp}>
+        <h2 className="text-2xl font-bold text-white">
+          {activeFilter === 'completed' && 'Completed Roadmaps'}
+          {activeFilter === 'mastered' && 'Mastered Topics'}
+          {activeFilter === 'active' && 'Active Roadmaps'}
+          {!activeFilter && 'Your Learning Paths'}
+        </h2>
+        {activeFilter && (
+          <motion.button
+            onClick={() => setActiveFilter(null)}
+            className="text-sm text-slate-400 hover:text-white flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <span>Clear Filter</span>
+            <span className="text-xs">✕</span>
+          </motion.button>
+        )}
+      </motion.div>
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl p-4 mb-6 text-sm">
@@ -375,10 +428,15 @@ export default function DashboardPage() {
         >
           <CardSkeleton /><CardSkeleton />
         </motion.div>
-      ) : roadmaps.length === 0 ? (
+      ) : filteredRoadmaps.length === 0 ? (
         <div className="bg-slate-800/20 border border-dashed border-slate-700 rounded-2xl p-12 text-center">
-          <p className="text-slate-400 mb-6">You haven't generated any roadmaps yet.</p>
-          <Link href="/generate" className="text-indigo-400 hover:text-indigo-300 font-medium">Create your first roadmap &rarr;</Link>
+          <p className="text-slate-400 mb-6">
+            {activeFilter === 'completed' && 'No completed roadmaps yet. Keep learning!'}
+            {activeFilter === 'mastered' && 'No mastered topics yet. Keep going!'}
+            {activeFilter === 'active' && 'No active roadmaps. Start learning something new!'}
+            {!activeFilter && "You haven't generated any roadmaps yet."}
+          </p>
+          {!activeFilter && <Link href="/generate" className="text-indigo-400 hover:text-indigo-300 font-medium">Create your first roadmap &rarr;</Link>}
         </div>
       ) : (
         <motion.div
@@ -386,7 +444,7 @@ export default function DashboardPage() {
           variants={containerVariants}
         >
           <AnimatePresence mode="popLayout">
-            {roadmaps.map(rm => (
+            {filteredRoadmaps.map(rm => (
               <motion.div
                 key={rm.id}
                 className="relative"
