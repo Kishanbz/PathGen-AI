@@ -1,4 +1,4 @@
-# PathGen-AI 🚀 AI-Powered Learning Roadmap Generator
+# PathGen-AI 🚀 AI-Powered Personalized Learning Path System
 
 <div align="center">
 
@@ -12,7 +12,7 @@
 
 ## 📋 Table of Contents
 
-- [PathGen-AI 🚀 AI-Powered Learning Roadmap Generator](#pathgen-ai--ai-powered-learning-roadmap-generator)
+- [PathGen-AI 🚀 AI-Powered Personalized Learning Path System](#pathgen-ai--ai-powered personalized learning path system)
   - [📋 Table of Contents](#-table-of-contents)
   - [🚀 Project Overview](#-project-overview)
   - [❗ Problem Statement](#-problem-statement)
@@ -66,7 +66,7 @@ Unlike static learning platforms, PathGen-AI **dynamically creates personalized 
 
 | Attribute            | Details                                                     |
 | -------------------- | ----------------------------------------------------------- |
-| Project Name         | PathGen-AI — AI-Powered Learning Roadmap Generator          |
+| Project Name         | PathGen-AI — AI-Powered Personalized Learning Path System          |
 | Project Category     | AI + EdTech + Web Application                               |
 | Project Type         | College Final Year Submission                               |
 | Development Duration | 3 Months (12 Weeks)                                         |

@@ -19,6 +19,7 @@ class Roadmap(Base):
     flowchart_json = Column(JSON) # Stores React Flow nodes and edges
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     visits = Column(Integer, default=0)
+    is_published = Column(Integer, default=0) # 0 = private, 1 = published (public)
 
 class NodeProgress(Base):
     __tablename__ = "node_progress"

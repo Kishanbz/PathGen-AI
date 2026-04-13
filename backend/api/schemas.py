@@ -24,6 +24,7 @@ class NodeData(BaseModel):
     description: str = Field(description="A brief 2-3 sentence explanation of this topic")
     status: str = Field(default="pending", description="'pending', 'done', or 'skip'")
     type: str = Field(description="'theory', 'practice', 'tool', etc.")
+    subtopics: List[str] = Field(default_factory=list, description="3-4 specific concepts covered within this master topic")
     resources: NodeResources
 
 class FlowchartNode(BaseModel):
@@ -40,3 +41,11 @@ class FlowchartEdge(BaseModel):
 class GeneratedRoadmapData(BaseModel):
     nodes: List[FlowchartNode]
     edges: List[FlowchartEdge]
+
+class TutorRequest(BaseModel):
+    topic: str
+    question: str
+    history: List[Dict[str, str]] = Field(default_factory=list)
+
+class TutorResponse(BaseModel):
+    answer: str

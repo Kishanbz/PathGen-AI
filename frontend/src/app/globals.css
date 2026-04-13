@@ -19,6 +19,8 @@
   --color-border-subtle: rgba(255, 255, 255, 0.1);
   --color-connector-solid: #3b82f6;
   --color-connector-dotted: rgba(59, 130, 246, 0.5);
+
+  --animate-spin-slow: spin 3s linear infinite;
 }
 
 :root {
