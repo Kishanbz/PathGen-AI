@@ -63,13 +63,13 @@ function GenerateContent() {
 
   if (error) {
     return (
-      <motion.div 
+      <motion.div
         className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <motion.h1 
+        <motion.h1
           className="text-3xl font-bold mb-4 text-red-400 font-serif"
           initial={{ scale: 0.9 }}
           animate={{ scale: 1 }}
@@ -90,37 +90,37 @@ function GenerateContent() {
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <motion.div 
+      <motion.div
         className="relative"
         animate={{ scale: [1, 1.05, 1] }}
         transition={{ duration: 2, repeat: Infinity }}
       >
-        <motion.div 
+        <motion.div
           className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full"
           animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
           transition={{ duration: 3, repeat: Infinity }}
         />
         <Loader2 size={64} className="animate-spin text-indigo-500 relative z-10 mb-8" />
       </motion.div>
-      <motion.h1 
+      <motion.h1
         className="text-3xl md:text-5xl font-bold mb-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
       >
-        Generating roadmap for <motion.span 
+        Generating roadmap for <motion.span
           className="text-indigo-400 inline-block"
           animate={{ opacity: [1, 0.5, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
         >"{topic}"</motion.span>
       </motion.h1>
-      <motion.p 
+      <motion.p
         className="text-xl text-slate-400 flex items-center gap-2"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -146,32 +146,29 @@ function GenerateContent() {
           const StepIcon = step.icon;
           const isActive = index === currentStep;
           const isDone = index < currentStep;
-          
+
           return (
             <motion.div
               key={index}
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 ${
-                isActive 
-                  ? 'bg-indigo-500/20 border border-indigo-500/30' 
-                  : isDone 
-                    ? 'bg-emerald-500/10 border border-emerald-500/20' 
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 ${isActive
+                  ? 'bg-indigo-500/20 border border-indigo-500/30'
+                  : isDone
+                    ? 'bg-emerald-500/10 border border-emerald-500/20'
                     : 'bg-slate-800/30 border border-slate-700/30'
-              }`}
+                }`}
               animate={isActive ? { scale: [1, 1.02, 1] } : {}}
               transition={{ duration: 1.5, repeat: isActive ? Infinity : 0 }}
             >
-              <div className={`p-1.5 rounded-full ${
-                isActive ? 'bg-indigo-500/30 text-indigo-400' : 
-                isDone ? 'bg-emerald-500/30 text-emerald-400' : 
-                'bg-slate-700/50 text-slate-500'
-              }`}>
+              <div className={`p-1.5 rounded-full ${isActive ? 'bg-indigo-500/30 text-indigo-400' :
+                  isDone ? 'bg-emerald-500/30 text-emerald-400' :
+                    'bg-slate-700/50 text-slate-500'
+                }`}>
                 <StepIcon size={14} />
               </div>
-              <span className={`text-sm ${
-                isActive ? 'text-indigo-300' : 
-                isDone ? 'text-emerald-400 line-through' : 
-                'text-slate-500'
-              }`}>
+              <span className={`text-sm ${isActive ? 'text-indigo-300' :
+                  isDone ? 'text-emerald-400 line-through' :
+                    'text-slate-500'
+                }`}>
                 {step.text}
               </span>
               {isActive && (
@@ -207,7 +204,7 @@ function GenerateContent() {
 export default function GeneratePage() {
   return (
     <Suspense fallback={
-      <motion.div 
+      <motion.div
         className="min-h-[70vh] flex items-center justify-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
