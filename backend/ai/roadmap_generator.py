@@ -18,7 +18,7 @@ def generate_roadmap_stream(topic: str):
     
     prompt = f"""Generate a learning roadmap JSON for: "{topic}".
 Output ONLY valid JSON:
-{{"title":"...","nodes":[{{"id":"n1","label":"...","description":"...","type":"custom","subtopics":["...","...","..."],"position":{{"x":0,"y":200}},"data":{{"label":"...","description":"...","type":"theory","status":"pending","subtopics":["..."],"resources":{{"youtube":[],"articles":[]}}}}}}],"edges":[{{"id":"e1","source":"n1","target":"n2"}}]}}
+{{"title":"...","nodes":[{{"id":"n1","label":"...","description":"...","type":"custom","subtopics":["...","...","..."],"position":{{"x":0,"y":200}},"data":{{"label":"...","description":"...","type":"theory","status":"pending","subtopics":["..."],"resources":{{"youtube":[{{"url":"https://youtube.com/...","title":"Video Title Here","channel":"Channel Name"}}],"articles":[{{"url":"https://...","title":"Article Title Here"}}]}}}}}}],"edges":[{{"id":"e1","source":"n1","target":"n2"}}]}}
 Rules: 5-7 nodes, horizontal layout x spacing 450, y:200 for linear flow."""
     
     kwargs = {
@@ -104,7 +104,7 @@ Also create edges connecting nodes sequentially (n1->n2, n2->n3, etc.).
 Make it practical with REAL resource URLs from the search results provided.
  
 Output ONLY valid JSON matching this schema:
-{{"title":"...","nodes":[{{"id":"n1","label":"...","description":"...","type":"custom","subtopics":["...","...","..."],"position":{{"x":0,"y":200}},"data":{{"label":"...","description":"...","type":"theory","status":"pending","subtopics":["..."],"resources":{{"youtube":[],"articles":[]}}}}}}],"edges":[{{"id":"e1","source":"n1","target":"n2"}}]}}"""
+{{"title":"...","nodes":[{{"id":"n1","label":"...","description":"...","type":"custom","subtopics":["...","...","..."],"position":{{"x":0,"y":200}},"data":{{"label":"...","description":"...","type":"theory","status":"pending","subtopics":["..."],"resources":{{"youtube":[{{"url":"https://youtube.com/...","title":"Video Title Here","channel":"Channel Name"}}],"articles":[{{"url":"https://...","title":"Article Title Here"}}]}}}}}}],"edges":[{{"id":"e1","source":"n1","target":"n2"}}]}}"""
     
     # Use streaming for faster feedback
     print(f"[AI] Generating roadmap with streaming...")
@@ -115,15 +115,24 @@ Output ONLY valid JSON matching this schema:
         "timeout": 120,
         "temperature": 1,
         "top_p": 0.95,
-        "max_tokens": 16384,
-        "stream": False
+        "max_tokens": 8000,
+        "stream": True
     }
     if any(r in model_name.lower() for r in ["deepseek", "kimi", "r1"]):
         kwargs["extra_body"] = {"chat_template_kwargs": {"thinking": True, "reasoning_effort": "low"}}
         
     completion = client.chat.completions.create(**kwargs)
     
-    result = completion.choices[0].message.content
+    # Collect streaming tokens to prevent HTTP read timeouts under heavy loads
+    full_response = []
+    for chunk in completion:
+        if not getattr(chunk, "choices", None):
+            continue
+        content = chunk.choices[0].delta.content
+        if content is not None:
+            full_response.append(content)
+            
+    result = "".join(full_response)
     
     # Robust JSON extraction
     cleaned_result = result.strip()

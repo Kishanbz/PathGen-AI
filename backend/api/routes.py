@@ -235,16 +235,21 @@ async def get_user_roadmaps(
     # Simply return roadmaps created by the user for now
     roadmaps = db.query(Roadmap).filter(Roadmap.author_id == user_id).order_by(Roadmap.created_at.desc()).all()
     
+    # Batch query all NodeProgress for the user to optimize and avoid N+1 query pattern
+    all_progress = db.query(NodeProgress).filter_by(user_id=user_id).all()
+    progress_by_roadmap = {}
+    for p in all_progress:
+        if p.roadmap_id not in progress_by_roadmap:
+            progress_by_roadmap[p.roadmap_id] = []
+        progress_by_roadmap[p.roadmap_id].append(p)
+        
     result = []
     for r in roadmaps:
         # Calculate individual progress for each roadmap
-        nodes = r.flowchart_json.get("nodes", [])
+        nodes = r.flowchart_json.get("nodes", []) if r.flowchart_json else []
         total_nodes = len(nodes)
         
-        progress_records = db.query(NodeProgress).filter_by(
-            user_id=user_id, 
-            roadmap_id=r.id
-        ).all()
+        progress_records = progress_by_roadmap.get(r.id, [])
         
         completed_nodes = sum(1 for p in progress_records if p.status in ["done", "skip"])
         progress_val = int((completed_nodes / total_nodes) * 100) if total_nodes > 0 else 0

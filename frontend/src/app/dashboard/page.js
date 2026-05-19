@@ -99,17 +99,24 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchData() {
+      console.log('DEBUG: Dashboard page useEffect - fetchData started. isLoaded:', isLoaded, 'isSignedIn:', isSignedIn);
       if (!isLoaded || !isSignedIn) {
-        if (isLoaded && !isSignedIn) setLoading(false);
+        if (isLoaded && !isSignedIn) {
+          console.log('DEBUG: User not signed in, stopping loading.');
+          setLoading(false);
+        }
         return;
       }
 
       try {
+        console.log('DEBUG: Requesting Clerk auth token...');
         const token = await getToken();
+        console.log('DEBUG: Clerk auth token received:', token ? 'Token exists' : 'Token is empty/null');
         const headers = { Authorization: `Bearer ${token}` };
 
-        // Fetch roadmaps only - we'll calculate stats from the data
-        const rmResponse = await api.get('/user/roadmaps', { headers, timeout: 30000 });
+        console.log('DEBUG: Requesting /user/roadmaps from backend api.get...');
+        const rmResponse = await api.get('/user/roadmaps', { headers });
+        console.log('DEBUG: /user/roadmaps response received:', rmResponse.status, rmResponse.data);
 
         // Remove duplicates - keep only the most recent roadmap for each topic
         const allRoadmaps = rmResponse.data.roadmaps || [];
@@ -126,6 +133,7 @@ export default function DashboardPage() {
           }
         }
 
+        console.log('DEBUG: Unique roadmaps count:', uniqueRoadmaps.length);
         setRoadmaps(uniqueRoadmaps);
         
         // Calculate real stats from the actual roadmaps data
@@ -134,13 +142,21 @@ export default function DashboardPage() {
         // Topics mastered = sum of completed nodes across all roadmaps
         const topicsMastered = uniqueRoadmaps.reduce((sum, rm) => sum + (rm.completedNodes || 0), 0);
         
+        console.log('DEBUG: Calculated stats - completed:', completedRoadmaps, 'active:', activeRoadmaps, 'mastered:', topicsMastered);
         setStats({
           roadmaps_completed: completedRoadmaps,
           topics_mastered: topicsMastered,
           active_roadmaps: activeRoadmaps
         });
       } catch (err) {
-        console.error('Failed to fetch dashboard data:', err);
+        console.error('DEBUG ERROR: Failed to fetch dashboard data:', err);
+        console.error('DEBUG ERROR DETAILS:', {
+          message: err.message,
+          code: err.code,
+          responseStatus: err.response?.status,
+          responseData: err.response?.data,
+          stack: err.stack
+        });
         if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
           setError('Request timed out. The server is taking too long to respond. Please try again.');
         } else {
@@ -149,6 +165,7 @@ export default function DashboardPage() {
         // Still show the page with empty data
         setRoadmaps([]);
       } finally {
+        console.log('DEBUG: Setting loading to false');
         setLoading(false);
       }
     }

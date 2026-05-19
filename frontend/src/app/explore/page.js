@@ -51,7 +51,7 @@ export default function ExplorePage() {
   useEffect(() => {
     async function loadInitial() {
       try {
-        const response = await api.get('/roadmaps', { timeout: 8000 });
+        const response = await api.get('/roadmaps');
         const mapped = (response.data.roadmaps || []).map(rm => ({
           id: rm.id,
           title: rm.topic,
@@ -79,7 +79,7 @@ export default function ExplorePage() {
       searchTimerRef.current = setTimeout(async () => {
         setLoading(true);
         try {
-          const response = await api.get('/roadmaps', { timeout: 8000 });
+          const response = await api.get('/roadmaps');
           setRoadmaps((response.data.roadmaps || []).map(rm => ({
             id: rm.id,
             title: rm.topic,
@@ -99,7 +99,7 @@ export default function ExplorePage() {
     searchTimerRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const response = await api.get(`/roadmaps/search?q=${encodeURIComponent(searchQuery)}`, { timeout: 8000 });
+        const response = await api.get(`/roadmaps/search?q=${encodeURIComponent(searchQuery)}`);
         setRoadmaps((response.data.roadmaps || []).map(rm => ({
           id: rm.id,
           title: rm.topic,

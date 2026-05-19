@@ -163,22 +163,29 @@ export default function TopicDrawer({ node, isOpen, onClose }) {
                   <Play size={16} className="text-red-500" /> Video Tutorials
                 </h3>
                 <div className="space-y-4">
-                  {resources.youtube.map((vid, idx) => (
-                    <a key={idx} href={vid.url} target="_blank" rel="noreferrer" className="block p-4 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-red-500/50 transition-all group shadow-lg">
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
-                          <Play size={20} className="text-red-500" />
+                  {resources.youtube.map((vid, idx) => {
+                    const normalizedVid = typeof vid === 'string' ? { url: vid, title: 'Video Tutorial', channel: 'YouTube' } : {
+                      url: vid?.url || '#',
+                      title: vid?.title || 'Video Tutorial',
+                      channel: vid?.channel || 'YouTube'
+                    };
+                    return (
+                      <a key={idx} href={normalizedVid.url} target="_blank" rel="noreferrer" className="block p-4 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-red-500/50 transition-all group shadow-lg">
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+                            <Play size={20} className="text-red-500" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="font-bold text-slate-100 group-hover:text-red-400 transition-colors text-sm block mb-1">{normalizedVid.title}</span>
+                            <span className="text-xs text-slate-500 flex items-center gap-1">
+                              {normalizedVid.channel} • Video Resource
+                            </span>
+                          </div>
+                          <ExternalLink size={16} className="text-slate-600 group-hover:text-white transition-colors shrink-0" />
                         </div>
-                        <div className="flex-1">
-                          <span className="font-bold text-slate-100 group-hover:text-red-400 transition-colors text-sm block mb-1">{vid.title}</span>
-                          <span className="text-xs text-slate-500 flex items-center gap-1">
-                            {vid.channel} • Video Resource
-                          </span>
-                        </div>
-                        <ExternalLink size={16} className="text-slate-600 group-hover:text-white transition-colors shrink-0" />
-                      </div>
-                    </a>
-                  ))}
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -190,17 +197,23 @@ export default function TopicDrawer({ node, isOpen, onClose }) {
                   <FileText size={16} className="text-blue-400" /> Deep Dives
                 </h3>
                 <div className="space-y-4">
-                  {resources.articles.map((art, idx) => (
-                    <a key={idx} href={art.url} target="_blank" rel="noreferrer" className="block p-4 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-blue-500/50 transition-all group shadow-lg">
-                      <div className="flex justify-between items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
-                          <Book size={20} className="text-blue-400" />
+                  {resources.articles.map((art, idx) => {
+                    const normalizedArt = typeof art === 'string' ? { url: art, title: 'Article Deep Dive' } : {
+                      url: art?.url || '#',
+                      title: art?.title || 'Article Deep Dive'
+                    };
+                    return (
+                      <a key={idx} href={normalizedArt.url} target="_blank" rel="noreferrer" className="block p-4 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-blue-500/50 transition-all group shadow-lg">
+                        <div className="flex justify-between items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+                            <Book size={20} className="text-blue-400" />
+                          </div>
+                          <span className="flex-1 font-bold text-slate-100 group-hover:text-blue-400 transition-colors text-sm">{normalizedArt.title}</span>
+                          <ExternalLink size={16} className="text-slate-600 group-hover:text-white transition-colors shrink-0" />
                         </div>
-                        <span className="flex-1 font-bold text-slate-100 group-hover:text-blue-400 transition-colors text-sm">{art.title}</span>
-                        <ExternalLink size={16} className="text-slate-600 group-hover:text-white transition-colors shrink-0" />
-                      </div>
-                    </a>
-                  ))}
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             )}
