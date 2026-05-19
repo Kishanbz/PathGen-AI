@@ -8,10 +8,15 @@ def get_firecrawl_app():
         raise ValueError("FIRECRAWL_API_KEY environment variable not set")
     return FirecrawlApp(api_key=api_key)
 
-def search_latest_resources(topic: str, limit: int = 10) -> dict:
+def search_latest_resources(topic: str, limit: int = 4, timeout: int = 15) -> dict:
     """
     Search for latest resources on a topic using Firecrawl.
     Returns articles, videos, and documentation URLs.
+    
+    Args:
+        topic: The topic to search for
+        limit: Maximum number of results to fetch (reduced for speed)
+        timeout: Timeout in seconds for the search
     """
     try:
         app = get_firecrawl_app()
@@ -19,14 +24,8 @@ def search_latest_resources(topic: str, limit: int = 10) -> dict:
         # Search query for the topic
         search_query = f"{topic} tutorial guide documentation best practices 2024 2025"
         
-        # Use Firecrawl to search and scrape
-        result = app.search(search_query, params={
-            "limit": limit,
-            "scrapeOptions": {
-                "formats": ["markdown", "links"],
-                "onlyMainContent": True
-            }
-        })
+        # Use Firecrawl to search only, skip heavy scraping with timeout
+        result = app.search(search_query, limit=limit, timeout=timeout)
         
         resources = {
             "articles": [],
@@ -35,37 +34,42 @@ def search_latest_resources(topic: str, limit: int = 10) -> dict:
             "summary": ""
         }
         
-        if result and "data" in result:
-            for item in result["data"]:
-                url = item.get("url", "")
-                title = item.get("title", "")
-                description = item.get("description", "")
-                
-                # Categorize by URL pattern
-                if "youtube.com" in url or "youtu.be" in url:
-                    resources["videos"].append({
-                        "title": title,
-                        "url": url,
-                        "description": description
-                    })
-                elif "docs." in url or "documentation" in url.lower():
-                    resources["documentation"].append({
-                        "title": title,
-                        "url": url,
-                        "description": description
-                    })
-                else:
-                    resources["articles"].append({
-                        "title": title,
-                        "url": url,
-                        "description": description
-                    })
+        items = []
+        if hasattr(result, "web") and result.web:
+            items = [{"url": getattr(i, "url", ""), "title": getattr(i, "title", ""), "description": getattr(i, "description", "")} for i in result.web]
+        elif isinstance(result, dict) and "data" in result:
+            items = result["data"]
+            
+        for item in items:
+            url = item.get("url", "")
+            title = item.get("title", "")
+            description = item.get("description", "")
+            
+            # Categorize by URL pattern
+            if "youtube.com" in url or "youtu.be" in url:
+                resources["videos"].append({
+                    "title": title,
+                    "url": url,
+                    "description": description
+                })
+            elif "docs." in url or "documentation" in url.lower():
+                resources["documentation"].append({
+                    "title": title,
+                    "url": url,
+                    "description": description
+                })
+            else:
+                resources["articles"].append({
+                    "title": title,
+                    "url": url,
+                    "description": description
+                })
         
         return resources
         
     except Exception as e:
         print(f"Firecrawl search error: {e}")
-        return {"articles": [], "videos": [], "documentation": [], "summary": "", "error": str(e)}
+        return {"articles": [], "videos": [], "documentation": [], "summary": "", "error": str(e), "timed_out": True}
 
 def enrich_roadmap_with_resources(roadmap_data: dict, topic: str) -> dict:
     """
