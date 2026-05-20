@@ -68,8 +68,11 @@ def _verify_token(token: str) -> str:
 
         if not rsa_key:
             if DEBUG:
-                payload = jwt.get_unverified_claims(token)
-                return payload.get("sub", "dev_user")
+                try:
+                    payload = jwt.get_unverified_claims(token)
+                    return payload.get("sub", "dev_user")
+                except Exception:
+                    return "dev_user"
             raise HTTPException(status_code=401, detail="Could not find appropriate key")
 
         payload = jwt.decode(
@@ -88,11 +91,17 @@ def _verify_token(token: str) -> str:
 
     except ExpiredSignatureError:
         if DEBUG:
-            return jwt.get_unverified_claims(token).get("sub", "dev_user")
+            try:
+                return jwt.get_unverified_claims(token).get("sub", "dev_user")
+            except Exception:
+                return "dev_user"
         raise HTTPException(status_code=401, detail="Token has expired")
     except JWTError as e:
         if DEBUG:
-            return jwt.get_unverified_claims(token).get("sub", "dev_user")
+            try:
+                return jwt.get_unverified_claims(token).get("sub", "dev_user")
+            except Exception:
+                return "dev_user"
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
     except HTTPException:
         raise

@@ -98,25 +98,33 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
+    let active = true;
+
     async function fetchData() {
       console.log('DEBUG: Dashboard page useEffect - fetchData started. isLoaded:', isLoaded, 'isSignedIn:', isSignedIn);
       if (!isLoaded || !isSignedIn) {
         if (isLoaded && !isSignedIn) {
           console.log('DEBUG: User not signed in, stopping loading.');
-          setLoading(false);
+          if (active) setLoading(false);
         }
         return;
       }
 
       try {
         console.log('DEBUG: Requesting Clerk auth token...');
-        const token = await getToken();
-        console.log('DEBUG: Clerk auth token received:', token ? 'Token exists' : 'Token is empty/null');
-        const headers = { Authorization: `Bearer ${token}` };
+        // Wrap getToken() in a Promise.race with a 3-second timeout to prevent indefinite hanging
+        const tokenPromise = getToken();
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 3000));
+        const token = await Promise.race([tokenPromise, timeoutPromise]);
+        
+        console.log('DEBUG: Clerk auth token received:', token ? 'Token exists' : 'Token is empty/null/timed out');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         console.log('DEBUG: Requesting /user/roadmaps from backend api.get...');
         const rmResponse = await api.get('/user/roadmaps', { headers });
         console.log('DEBUG: /user/roadmaps response received:', rmResponse.status, rmResponse.data);
+
+        if (!active) return;
 
         // Remove duplicates - keep only the most recent roadmap for each topic
         const allRoadmaps = rmResponse.data.roadmaps || [];
@@ -157,20 +165,28 @@ export default function DashboardPage() {
           responseData: err.response?.data,
           stack: err.stack
         });
-        if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-          setError('Request timed out. The server is taking too long to respond. Please try again.');
-        } else {
-          setError('Could not load dashboard data. Please refresh.');
+        if (active) {
+          if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+            setError('Request timed out. The server is taking too long to respond. Please try again.');
+          } else {
+            setError('Could not load dashboard data. Please refresh.');
+          }
+          // Still show the page with empty data
+          setRoadmaps([]);
         }
-        // Still show the page with empty data
-        setRoadmaps([]);
       } finally {
-        console.log('DEBUG: Setting loading to false');
-        setLoading(false);
+        if (active) {
+          console.log('DEBUG: Setting loading to false');
+          setLoading(false);
+        }
       }
     }
 
     fetchData();
+
+    return () => {
+      active = false;
+    };
   }, [isLoaded, isSignedIn, getToken]);
 
   // Close menu when clicking outside

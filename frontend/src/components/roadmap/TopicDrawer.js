@@ -60,6 +60,8 @@ export default function TopicDrawer({ node, isOpen, onClose }) {
             topic: data.label,
             question: messageText,
             history: messages.slice(-6) // Send last 3 pairs for context
+        }, {
+            timeout: 120000 // 2 minutes timeout specifically for this AI tutor query
         });
 
         const aiMessage = { role: 'assistant', content: response.data.answer };

@@ -31,7 +31,10 @@ function GenerateContent() {
         const token = await getToken();
         const response = await api.post('/roadmaps/generate',
           { topic },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { 
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 120000 // 2 minutes timeout specifically for this heavy AI generation request
+          }
         );
 
         if (response.data?.id) {
