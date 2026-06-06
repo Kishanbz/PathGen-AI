@@ -1,7 +1,39 @@
 import os
+import json
+from urllib.parse import quote_plus
 from openai import OpenAI
-from api.schemas import GeneratedRoadmapData
-from ai.firecrawl_client import search_latest_resources
+
+
+def _make_search_resources(topic: str, node_label: str) -> dict:
+    """
+    Build guaranteed-working search URLs for a node.
+    Instead of AI hallucinating specific video/article URLs (which are often broken),
+    we generate YouTube search and Google search links that ALWAYS work.
+    """
+    query = f"{topic} {node_label}"
+    encoded = quote_plus(query)
+    encoded_yt = quote_plus(f"{topic} {node_label} tutorial")
+
+    return {
+        "youtube": [
+            {
+                "url": f"https://www.youtube.com/results?search_query={encoded_yt}",
+                "title": f"Search: {node_label} Tutorial on YouTube",
+                "channel": "YouTube Search"
+            }
+        ],
+        "articles": [
+            {
+                "url": f"https://www.google.com/search?q={encoded}+tutorial+guide",
+                "title": f"Search: {node_label} Guides & Articles"
+            },
+            {
+                "url": f"https://www.reddit.com/search/?q={encoded}",
+                "title": f"Reddit: {node_label} Discussion & Tips"
+            }
+        ]
+    }
+
 
 def generate_roadmap_stream(topic: str):
     """
@@ -10,31 +42,28 @@ def generate_roadmap_stream(topic: str):
     api_key = os.getenv("OPENAI_API_KEY")
     base_url = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
     model_name = os.getenv("AI_MODEL_NAME", "meta/llama-3.3-70b-instruct")
-    
-    client = OpenAI(
-        base_url=base_url,
-        api_key=api_key
-    )
-    
+
+    client = OpenAI(base_url=base_url, api_key=api_key)
+
     prompt = f"""Generate a learning roadmap JSON for: "{topic}".
-Output ONLY valid JSON:
-{{"title":"...","nodes":[{{"id":"n1","label":"...","description":"...","type":"custom","subtopics":["...","...","..."],"position":{{"x":0,"y":200}},"data":{{"label":"...","description":"...","type":"theory","status":"pending","subtopics":["..."],"resources":{{"youtube":[{{"url":"https://youtube.com/...","title":"Video Title Here","channel":"Channel Name"}}],"articles":[{{"url":"https://...","title":"Article Title Here"}}]}}}}}}],"edges":[{{"id":"e1","source":"n1","target":"n2"}}]}}
-Rules: 5-7 nodes, horizontal layout x spacing 450, y:200 for linear flow."""
-    
+Output ONLY valid JSON with NO extra text:
+{{"title":"...","nodes":[{{"id":"n1","label":"...","description":"...","type":"custom","subtopics":["...","...","..."],"position":{{"x":0,"y":200}},"data":{{"label":"...","description":"...","type":"theory","status":"pending","subtopics":["...","...","..."]}}}}],"edges":[{{"id":"e1","source":"n1","target":"n2"}}]}}
+Rules: 5-7 nodes, horizontal layout x spacing 450, y:200 for all nodes. NO resources field needed."""
+
     kwargs = {
         "model": model_name,
         "messages": [{"role": "user", "content": prompt}],
         "timeout": 180,
         "temperature": 0.7,
         "top_p": 0.95,
-        "max_tokens": 3000,
+        "max_tokens": 2000,
         "stream": True
     }
     if any(r in model_name.lower() for r in ["deepseek", "kimi", "r1"]):
         kwargs["extra_body"] = {"chat_template_kwargs": {"thinking": True, "reasoning_effort": "low"}}
-        
+
     completion = client.chat.completions.create(**kwargs)
-    
+
     for chunk in completion:
         if not getattr(chunk, "choices", None):
             continue
@@ -44,86 +73,52 @@ Rules: 5-7 nodes, horizontal layout x spacing 450, y:200 for linear flow."""
         if chunk.choices and chunk.choices[0].delta.content is not None:
             yield chunk.choices[0].delta.content
 
+
 def generate_roadmap_with_ai(topic: str) -> dict:
     """
-    Calls AI to generate a learning roadmap with latest resources from Firecrawl.
+    Calls AI to generate roadmap structure only (labels, descriptions, subtopics).
+    Resources (YouTube, articles) are injected as guaranteed-working search URLs —
+    never hallucinated by the AI, so they always work.
     """
-    # Step 1: Fetch latest resources using Firecrawl (with timeout and fallback)
-    print(f"[Firecrawl] Searching latest resources for: {topic}")
-    # Skip Firecrawl for faster generation (comment out to enable)
-    # latest_resources = search_latest_resources(topic, limit=2, timeout=5)
-    latest_resources = {"timed_out": True}
-    
-    # Check if Firecrawl timed out or failed
-    if latest_resources.get("timed_out") or latest_resources.get("error"):
-        print(f"[Firecrawl] Search failed or timed out, using AI without external resources")
-        resource_context = "\n(Note: Unable to fetch latest resources due to timeout. Generate roadmap with general best practices.)"
-    else:
-        # Build resource context for AI
-        resource_context = ""
-        if latest_resources.get("articles"):
-            resource_context += "\n\nLatest Articles Found:\n"
-            for article in latest_resources["articles"][:3]:
-                resource_context += f"- {article['title']}: {article['url']}\n"
-        
-        if latest_resources.get("videos"):
-            resource_context += "\nLatest Videos Found:\n"
-            for video in latest_resources["videos"][:2]:
-                resource_context += f"- {video['title']}: {video['url']}\n"
-        
-        if latest_resources.get("documentation"):
-            resource_context += "\nOfficial Documentation Found:\n"
-            for doc in latest_resources["documentation"][:2]:
-                resource_context += f"- {doc['title']}: {doc['url']}\n"
-    
-    # Step 2: Generate roadmap with AI using latest resources
     api_key = os.getenv("OPENAI_API_KEY")
     base_url = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
     model_name = os.getenv("AI_MODEL_NAME", "meta/llama-3.3-70b-instruct")
-    
-    client = OpenAI(
-        base_url=base_url,
-        api_key=api_key
-    )
-    
+
+    client = OpenAI(base_url=base_url, api_key=api_key)
+
+    # AI only generates the structure — no resources needed (less tokens = faster + accurate)
     prompt = f"""Generate a comprehensive learning roadmap for: "{topic}".
- 
-Use the following LATEST resources found from web search to make the roadmap current and practical:
-{resource_context}
- 
-Create 5-7 nodes. Each node needs:
-- id: unique identifier
-- label: clear title
-- description: 1-2 sentences explaining what to learn
-- type: "custom"
-- 3 subtopics as array
-- position: horizontal layout (x+450, y:200)
-- data with resources: include relevant URLs from the search results above
- 
-Also create edges connecting nodes sequentially (n1->n2, n2->n3, etc.).
-Make it practical with REAL resource URLs from the search results provided.
- 
-Output ONLY valid JSON matching this schema:
-{{"title":"...","nodes":[{{"id":"n1","label":"...","description":"...","type":"custom","subtopics":["...","...","..."],"position":{{"x":0,"y":200}},"data":{{"label":"...","description":"...","type":"theory","status":"pending","subtopics":["..."],"resources":{{"youtube":[{{"url":"https://youtube.com/...","title":"Video Title Here","channel":"Channel Name"}}],"articles":[{{"url":"https://...","title":"Article Title Here"}}]}}}}}}],"edges":[{{"id":"e1","source":"n1","target":"n2"}}]}}"""
-    
-    # Use streaming for faster feedback
-    print(f"[AI] Generating roadmap with streaming...")
-    
+
+Create 5-7 learning nodes in logical progression order.
+Each node must cover a distinct stage of learning.
+
+Output ONLY valid JSON, no markdown, no explanation:
+{{"title":"Full Roadmap Title","nodes":[{{"id":"n1","label":"Node Title","description":"1-2 sentence description of what to learn in this stage.","type":"custom","subtopics":["subtopic 1","subtopic 2","subtopic 3"],"position":{{"x":0,"y":200}},"data":{{"label":"Node Title","description":"1-2 sentence description.","type":"theory","status":"pending","subtopics":["subtopic 1","subtopic 2","subtopic 3"]}}}}],"edges":[{{"id":"e1","source":"n1","target":"n2"}}]}}
+
+Rules:
+- 5-7 nodes total
+- x positions: 0, 450, 900, 1350, 1800, 2250, 2700 (spacing of 450)
+- y: 200 for all nodes
+- edges connect nodes sequentially
+- Do NOT include any resources field — it will be added automatically
+- Output raw JSON only"""
+
+    print(f"[AI] Generating roadmap structure for: {topic}")
+
     kwargs = {
         "model": model_name,
         "messages": [{"role": "user", "content": prompt}],
         "timeout": 180,
         "temperature": 0.7,
         "top_p": 0.95,
-        "max_tokens": 3000,
+        "max_tokens": 2000,
         "stream": True
     }
     if any(r in model_name.lower() for r in ["deepseek", "kimi", "r1"]):
         kwargs["extra_body"] = {"chat_template_kwargs": {"thinking": True, "reasoning_effort": "low"}}
-        
+
     completion = client.chat.completions.create(**kwargs)
-    
-    # Collect streaming tokens to prevent HTTP read timeouts under heavy loads
+
     full_response = []
     for chunk in completion:
         if not getattr(chunk, "choices", None):
@@ -131,10 +126,10 @@ Output ONLY valid JSON matching this schema:
         content = chunk.choices[0].delta.content
         if content is not None:
             full_response.append(content)
-            
+
     result = "".join(full_response)
-    
-    # Robust JSON extraction
+
+    # Robust JSON extraction (strip markdown fences if present)
     cleaned_result = result.strip()
     if cleaned_result.startswith("```"):
         lines = cleaned_result.split("\n")
@@ -143,14 +138,26 @@ Output ONLY valid JSON matching this schema:
         if lines and lines[-1].strip() == "```":
             lines = lines[:-1]
         cleaned_result = "\n".join(lines).strip()
-        
-    import json
+
     data = json.loads(cleaned_result)
-    
-    # Auto-generate edges if missing
+
     nodes = data.get("nodes", [])
     edges = data.get("edges", [])
-    
+
+    # Inject guaranteed-working search resources into every node
+    for node in nodes:
+        node_label = node.get("label", node.get("data", {}).get("label", topic))
+        search_resources = _make_search_resources(topic, node_label)
+
+        # Inject into top-level node
+        node["resources"] = search_resources
+
+        # Inject into nested data object
+        if "data" not in node:
+            node["data"] = {}
+        node["data"]["resources"] = search_resources
+
+    # Auto-generate edges if missing
     if not edges and len(nodes) > 1:
         edges = []
         for i in range(len(nodes) - 1):
@@ -160,6 +167,6 @@ Output ONLY valid JSON matching this schema:
                 "target": nodes[i + 1]["id"]
             })
         data["edges"] = edges
-    
-    print(f"[Firecrawl] Roadmap generated with {len(nodes)} nodes using latest resources")
+
+    print(f"[AI] Roadmap generated: {len(nodes)} nodes with search-based resources")
     return data
