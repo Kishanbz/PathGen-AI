@@ -24,10 +24,10 @@ Rules: 5-7 nodes, horizontal layout x spacing 450, y:200 for linear flow."""
     kwargs = {
         "model": model_name,
         "messages": [{"role": "user", "content": prompt}],
-        "timeout": 120,
-        "temperature": 1,
+        "timeout": 180,
+        "temperature": 0.7,
         "top_p": 0.95,
-        "max_tokens": 16384,
+        "max_tokens": 3000,
         "stream": True
     }
     if any(r in model_name.lower() for r in ["deepseek", "kimi", "r1"]):
@@ -112,10 +112,10 @@ Output ONLY valid JSON matching this schema:
     kwargs = {
         "model": model_name,
         "messages": [{"role": "user", "content": prompt}],
-        "timeout": 120,
-        "temperature": 1,
+        "timeout": 180,
+        "temperature": 0.7,
         "top_p": 0.95,
-        "max_tokens": 8000,
+        "max_tokens": 3000,
         "stream": True
     }
     if any(r in model_name.lower() for r in ["deepseek", "kimi", "r1"]):

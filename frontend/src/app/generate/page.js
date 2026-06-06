@@ -33,7 +33,7 @@ function GenerateContent() {
           { topic },
           { 
             headers: { Authorization: `Bearer ${token}` },
-            timeout: 120000 // 2 minutes timeout specifically for this heavy AI generation request
+            timeout: 300000 // 5 minutes timeout specifically for this heavy AI generation request
           }
         );
 
