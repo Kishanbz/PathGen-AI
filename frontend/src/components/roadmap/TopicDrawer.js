@@ -171,6 +171,7 @@ export default function TopicDrawer({ node, isOpen, onClose }) {
                       title: vid?.title || 'Video Tutorial',
                       channel: vid?.channel || 'YouTube'
                     };
+                    const isSearch = normalizedVid.url.includes('search_query') || normalizedVid.url.includes('results?');
                     return (
                       <a key={idx} href={normalizedVid.url} target="_blank" rel="noreferrer" className="block p-4 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-red-500/50 transition-all group shadow-lg">
                         <div className="flex justify-between items-start gap-4">
@@ -180,7 +181,7 @@ export default function TopicDrawer({ node, isOpen, onClose }) {
                           <div className="flex-1">
                             <span className="font-bold text-slate-100 group-hover:text-red-400 transition-colors text-sm block mb-1">{normalizedVid.title}</span>
                             <span className="text-xs text-slate-500 flex items-center gap-1">
-                              {normalizedVid.channel} • Video Resource
+                              {normalizedVid.channel} {isSearch && <span className="ml-1 px-1.5 py-0.5 bg-red-500/10 text-red-400 rounded text-[10px] font-bold">SEARCH</span>}
                             </span>
                           </div>
                           <ExternalLink size={16} className="text-slate-600 group-hover:text-white transition-colors shrink-0" />
@@ -204,13 +205,18 @@ export default function TopicDrawer({ node, isOpen, onClose }) {
                       url: art?.url || '#',
                       title: art?.title || 'Article Deep Dive'
                     };
+                    const isSearch = normalizedArt.url.includes('google.com/search') || normalizedArt.url.includes('reddit.com/search');
+                    const isReddit = normalizedArt.url.includes('reddit.com');
                     return (
                       <a key={idx} href={normalizedArt.url} target="_blank" rel="noreferrer" className="block p-4 rounded-2xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-blue-500/50 transition-all group shadow-lg">
                         <div className="flex justify-between items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
-                            <Book size={20} className="text-blue-400" />
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isReddit ? 'bg-orange-500/10' : 'bg-blue-500/10'}`}>
+                            <Book size={20} className={isReddit ? 'text-orange-400' : 'text-blue-400'} />
                           </div>
-                          <span className="flex-1 font-bold text-slate-100 group-hover:text-blue-400 transition-colors text-sm">{normalizedArt.title}</span>
+                          <div className="flex-1">
+                            <span className="flex-1 font-bold text-slate-100 group-hover:text-blue-400 transition-colors text-sm block mb-1">{normalizedArt.title}</span>
+                            {isSearch && <span className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded font-bold">SEARCH</span>}
+                          </div>
                           <ExternalLink size={16} className="text-slate-600 group-hover:text-white transition-colors shrink-0" />
                         </div>
                       </a>
