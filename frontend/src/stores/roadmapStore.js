@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { MOCK_ROADMAP } from '@/lib/mock-roadmap';
 
 export const useRoadmapStore = create((set, get) => ({
   roadmapData: null,
